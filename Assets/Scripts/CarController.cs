@@ -1,136 +1,102 @@
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class CarController : MonoBehaviour
 {
-    public GameObject car;
-    public GameObject[] tier;
-    public WheelCollider[] wheelcollider;
-    public float[] gear_ratios = new float[7];
+    public GameObject car_obj;
+    public WheelCollider[] wheelcolliders = new WheelCollider[4];
 
 
+    public float max_rpm = 15000f;
+    public float max_horsepower = 1025f;
+    public float max_brake_force = 1500f;
+    public float max_steer_angle = 35f;
 
-    public float max_horsepower;
-    public float max_steer_angle;
-    public float max_handbrake_force;
-    public float max_rpm;
+    private float[] gear_ratios = new float[8];
+    private float[] speed_checkpoints = new float[7];
 
-    private float current_speed;
-    private int current_gear;
-    private float current_rpm;
+    public float current_rpm;
+    private float forward_input;
+    private float steer_input;
+    private float brake_input;
     private float current_torque;
 
-    private float forward_input;
-    private float side_input;
-    private float handbrake_input = 0;
+    Rigidbody car_rb;
 
     // Start is called before the first frame update
     void Start()
     {
-        gear_ratios[0] = 3.23f;
-        gear_ratios[1] = 2.19f;
-        gear_ratios[2] = 1.71f;
-        gear_ratios[3] = 1.39f;
-        gear_ratios[4] = 1.16f;
-        gear_ratios[5] = 0.93f;
-        gear_ratios[6] = 2.37f;
+        car_rb = car_obj.GetComponent<Rigidbody>();
+
+        //setting gear ratios
+        //gear_ratios[0] = 0f;
+        //gear_ratios[1] = 3.23f;
+        //gear_ratios[2] = 2.19f;
+        //gear_ratios[3] = 1.71f;
+        //gear_ratios[4] = 1.39f;
+        //gear_ratios[5] = 1.16f;
+        //gear_ratios[6] = 0.93f;
+        //gear_ratios[7] = 2.37f;
     }
 
     // Update is called once per frame
     void Update()
     {
-
     }
 
     private void FixedUpdate()
     {
         InputManagement();
-        SteeringManagement(side_input);
-        
-        current_gear = GearManagement(current_rpm);
-
-        if (current_gear == 0)
-        {
-            ApplyForces(forward_input, handbrake_input, gear_ratios[0]);
-
-        }
-        else
-        {
-            ApplyForces(forward_input, handbrake_input, gear_ratios[current_gear-1]);
-        }
-
-        Debug.Log(current_gear + " & " + current_rpm);
-
+        SteeringManagement();
+        ForceManagement();
     }
 
-    private void InputManagement()
+    void InputManagement()
     {
         forward_input = Input.GetAxis("Vertical");
-        side_input = Input.GetAxis("Horizontal");
-        handbrake_input = Input.GetKey(KeyCode.Space) ? 1 : 0;
+        steer_input = Input.GetAxis("Horizontal");
+        brake_input = Input.GetKey(KeyCode.Space) ? 1 : 0;
     }
 
-    private void SteeringManagement(float inputS)
+    void SteeringManagement()
     {
-        wheelcollider[0].steerAngle = max_steer_angle * inputS;
-        wheelcollider[1].steerAngle = max_steer_angle * inputS;
+        wheelcolliders[0].steerAngle = steer_input * max_steer_angle;
+        wheelcolliders[1].steerAngle = steer_input * max_steer_angle;
     }
 
-    private int GearManagement(float current_rpm)
+    void ForceManagement()
     {
-        //current_speed = (rpm/60)*3.6
-        current_speed = (wheelcollider[2].rpm / 60) * 3.6f;
+        // set logic for default 1000f rpm if no input given and if given get current
 
-        if (forward_input > 0)
+        current_rpm = wheelcolliders[2].rpm;
+
+        //if current_rpm is greater than 15000 then no torque force applied
+        if (current_rpm > 15000f)
         {
-            if (current_gear <=0)
-            {
-                current_gear++;
-            }
-            else if (current_rpm >= 8000)
-            {
-                current_gear++;
-            }
+            Debug.Log("max reached");
         }
-        if (handbrake_input > 0 || forward_input <= 0)
+        //current_torque = current_rpm > 15000f ? 0 : max_horsepower * 7127f / current_rpm;
+        current_torque = current_rpm > 15000f ? 0 : max_horsepower * 7127f ;
+
+        for (int i = 0; i < 4; i++)
         {
-            if (current_torque !> 0 && forward_input == 0)
-            {
-                if (current_rpm == 0)
-                {
-                    return 1;
-                }
-                //logic for reverse gear
-            }
-            else if (current_rpm <= 8000)
-            {
-                current_gear--;
-            }
-        }
-        else
-        {
-            current_gear = 0;
+            wheelcolliders[i].brakeTorque = 0;
         }
 
-        return current_gear;
-    }
+        wheelcolliders[2].motorTorque = forward_input * current_torque * Time.deltaTime;
+        wheelcolliders[3].motorTorque = forward_input * current_torque * Time.deltaTime;
 
-    private void ApplyForces(float inputF, float inputB, float current_gear_ratio)
-    {
-         //current rpm count & current_torque
-        current_rpm = wheelcollider[2].rpm;
-        current_torque = inputF * ((max_horsepower * 7127) / max_rpm) * current_gear_ratio;
 
-        // wheelcollider motor torque
-        wheelcollider[2].motorTorque = current_torque;
-        wheelcollider[3].motorTorque = current_torque;
+        //Brake management
+        if (brake_input != 0)
+        {
+            wheelcolliders[2].motorTorque = 0;
+            wheelcolliders[3].motorTorque = 0;
 
-        // wheelcollider handbrake force
-        wheelcollider[0].brakeTorque = max_handbrake_force * inputB;
-        wheelcollider[1].brakeTorque = max_handbrake_force * inputB;
-        wheelcollider[2].brakeTorque = max_handbrake_force * inputB;
-        wheelcollider[3].brakeTorque = max_handbrake_force * inputB;
-
+            for (int i = 0; i < 4; i++)
+            {
+                wheelcolliders[i].brakeTorque = max_brake_force * 7127f * Time.deltaTime;
+            }
+        }
     }
 
 }

@@ -10,13 +10,6 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 
-# by jaimin to reduce size leave models and materials
-Assets/Models
-*.fbx
-*.mat
-*.meta
-Assets/Materials
-
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
 /[Mm]emoryCaptures/
