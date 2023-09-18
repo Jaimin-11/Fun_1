@@ -58,7 +58,6 @@ public class CarControllerMobile : MonoBehaviour
     void Update()
     {
         Monitoring();
-        InputManagement();
         SteerManagement();
         GearManagement();
         ForceManagement();
@@ -79,6 +78,16 @@ public class CarControllerMobile : MonoBehaviour
         forward_input = -1f;
     }
 
+    public void ApplyHandbrake()
+    {
+        is_brake_applied = true;
+    }
+
+    public void NoHandbrake()
+    {
+        is_brake_applied = false;
+    }
+
 
     public void GearUp()
     {
@@ -88,21 +97,6 @@ public class CarControllerMobile : MonoBehaviour
     public void GearDown()
     {
         current_gear = current_gear - 1;
-    }
-
-    private void InputManagement()
-    {
-        //forward_input = Input.GetAxis("Vertical");
-        //side_input = Input.GetAxis("Horizontal");
-
-        if (Input.GetKey(KeyCode.Space))
-        {
-            is_brake_applied = true;
-        }
-        else
-        {
-            is_brake_applied = false;
-        }
     }
 
     private void Monitoring()
