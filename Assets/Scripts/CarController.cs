@@ -3,10 +3,9 @@ using UnityEngine;
 public class CarController : MonoBehaviour
 {
     public GameObject car_obj;
-    public WheelCollider wc_FL;
-    public WheelCollider wc_FR;
-    public WheelCollider wc_RL;
-    public WheelCollider wc_RR;
+    public WheelCollider[] wheel_colliders;
+    public GameObject[] tyres;
+    public GameObject[] tyre_cover;
 
     //max horspower = 1025; so, at max 15000 rpm max torque will be '264 Nm' => as per max Gear ratio => input torque = '81.7 Nm'
     public float input_torque = 81.7f;
@@ -15,14 +14,14 @@ public class CarController : MonoBehaviour
     public float min_rpm = 1000f;
     public float max_steer_angle = 35f;
 
-    private float current_rpm;
-    private float current_speed;
-    private float current_torque;
+    public int current_gear;
+    public float current_rpm;
+    public float current_speed;
+    public float current_torque;
 
     private float forward_input;
     private float side_input;
     private bool is_brake_applied;
-    private int current_gear;
 
     private float[] gear_ratios = new float[8];
     private float[] speed_checkpoints = new float[7];
@@ -62,6 +61,7 @@ public class CarController : MonoBehaviour
         SteerManagement();
         GearManagement();
         ForceManagement();
+        UpdateTierMovement();
 
     }
 
@@ -84,24 +84,26 @@ public class CarController : MonoBehaviour
     {
         //current_speed = ((2f * 3.14f * wc_RL.radius * wc_RL.rpm) / 60f) * 3.6f;
         current_speed = car_rb.velocity.magnitude * 3.6f;
-        current_rpm = wc_RL.rpm;
+        current_rpm = wheel_colliders[0].rpm;
     }
 
     private void SteerManagement()
     {
-        wc_FL.steerAngle = side_input * max_steer_angle;
-        wc_FR.steerAngle = side_input * max_steer_angle;
+        for (int i = 0; i < 2; i++)
+        {
+            wheel_colliders[i].steerAngle = side_input * max_steer_angle;
+        }
     }
 
     private void GearManagement()
     {
         if (Input.GetKeyDown(KeyCode.Z) && current_gear < 7)
         {
-            current_gear = current_gear + 1;
+            current_gear++;
         }
         else if (Input.GetKeyDown(KeyCode.X) && current_gear > 0)
         {
-            current_gear = current_gear - 1;
+            current_gear--;
         }
     }
 
@@ -109,28 +111,43 @@ public class CarController : MonoBehaviour
     {
         current_torque = input_torque * gear_ratios[current_gear];
 
-        wc_RL.motorTorque = forward_input * current_torque; 
-        wc_RR.motorTorque = forward_input * current_torque;
+        for (int i = 2; i < 4; i++)
+        {
+            wheel_colliders[i].motorTorque = forward_input * current_torque;
+        }
 
         if (is_brake_applied)
         {
             //making motor torque to '0'
-            wc_RL.motorTorque = 0f;
-            wc_RR.motorTorque = 0f;
+            for (int i = 2; i < 4; i++)
+            {
+                wheel_colliders[i].motorTorque = 0f;
+            }
 
             //apply brake torque
-            wc_FL.brakeTorque = max_brake_power;
-            wc_FR.brakeTorque = max_brake_power;
-            wc_RL.brakeTorque = max_brake_power;
-            wc_RR.brakeTorque = max_brake_power;
+            for (int i = 0; i < 4; i++)
+            {
+                wheel_colliders[i].brakeTorque = max_brake_power;
+            }
         }
         else
         {
             //removing brake torque
-            wc_FL.brakeTorque = 0;
-            wc_FR.brakeTorque = 0;
-            wc_RL.brakeTorque = 0;
-            wc_RR.brakeTorque = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                wheel_colliders[i].brakeTorque = 0f;
+            }
+        }
+    }
+
+    private void UpdateTierMovement()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            Vector3 pos;
+            Quaternion rot;
+            wheel_colliders[i].GetWorldPose(out pos, out rot);
+            tyres[i].transform.SetPositionAndRotation(pos, rot);
         }
     }
 

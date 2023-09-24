@@ -18,5 +18,6 @@ public class CamFollow : MonoBehaviour
     {
         //position update
         transform.position = new Vector3(target.transform.position.x + offset.x, target.transform.position.y + offset.y, target.transform.position.z + offset.z);
+        transform.LookAt(target.transform);
     }
 }
