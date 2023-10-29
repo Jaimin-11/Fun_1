@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class CarController : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class CarController : MonoBehaviour
     public WheelMeshes _wheelMeshes;
 
     [SerializeField] private float _maxHorsePower = 1025f;
+    [SerializeField] private float _maxBrakePower = 1025f;
     [SerializeField] private float _steerAngle = 30f;
     [SerializeField] private float _differentialRatio = 4.4f;
     [SerializeField] private int _currentGear = 0;
@@ -31,7 +33,13 @@ public class CarController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        SimulateCar();
+        //SimulateCar();
+        RPMTest();
+    }
+
+    void RPMTest()
+    {
+        CheckInput();
     }
 
     void SimulateCar()
@@ -39,16 +47,15 @@ public class CarController : MonoBehaviour
         CheckInput();
         ApplyForce();
         ApplyTurning();
+        ApplyTransform();
 
         if (Input.GetKeyDown(KeyCode.Z))
         {
             GearUp();
-            Debug.Log("gear up");
         }
         if (Input.GetKeyDown(KeyCode.X))
         {
             GearDown();
-            Debug.Log("gear down");
         }
     }
 
@@ -77,10 +84,34 @@ public class CarController : MonoBehaviour
     }
 
 
-
     void ApplyForce()
     {
-        _currentTorque = _motorTorque * _gearRatios[_currentGear] * _differentialRatio * gasInput;
+        if (Input.GetKey(KeyCode.Space)) 
+        { 
+            _currentTorque = 0f;
+
+            _colliders.FLWheel.brakeTorque = _maxBrakePower;
+            _colliders.FRWheel.brakeTorque = _maxBrakePower;
+            _colliders.RLWheel.brakeTorque = _maxBrakePower;
+            _colliders.RRWheel.brakeTorque = _maxBrakePower;
+        }
+        else
+        {
+            _colliders.FLWheel.brakeTorque = 0f;
+            _colliders.FRWheel.brakeTorque = 0f;
+            _colliders.RLWheel.brakeTorque = 0f;
+            _colliders.RRWheel.brakeTorque = 0f;
+        }
+
+        if (_currentRPM >= 15000f)
+        {
+            _currentTorque = 0f;
+        }
+        else
+        {
+            _currentTorque = _motorTorque * _gearRatios[_currentGear] * _differentialRatio * gasInput;
+        }
+
         _colliders.RRWheel.motorTorque = _currentTorque;
         _colliders.RLWheel.motorTorque = _currentTorque;
     }
@@ -89,6 +120,24 @@ public class CarController : MonoBehaviour
     {
         _colliders.FRWheel.steerAngle = _steerAngle * steeringInput;
         _colliders.FLWheel.steerAngle = _steerAngle * steeringInput;
+    }
+
+    void ApplyTransform()
+    {
+        UpdateWheel(_colliders.FLWheel, _wheelMeshes.FLWheel);
+        UpdateWheel(_colliders.FRWheel, _wheelMeshes.FRWheel);
+        UpdateWheel(_colliders.RLWheel, _wheelMeshes.RLWheel);
+        UpdateWheel(_colliders.RRWheel, _wheelMeshes.RRWheel);
+
+        void UpdateWheel(WheelCollider coll, MeshRenderer wheelMesh)
+        {
+            Quaternion quat;
+            Vector3 pos;
+
+            coll.GetWorldPose(out pos, out quat);
+            wheelMesh.transform.position = pos;
+            wheelMesh.transform.rotation = quat;
+        }
     }
 
     [System.Serializable]
