@@ -33,7 +33,7 @@ public class CarController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //SimulateCar();
+        SimulateCar();
         RPMTest();
     }
 
@@ -61,7 +61,7 @@ public class CarController : MonoBehaviour
 
     void CheckInput()
     {
-        _speed = _carRb.velocity.magnitude;
+        _speed = _carRb.linearVelocity.magnitude;
         _currentRPM = (_colliders.RLWheel.rpm + _colliders.RRWheel.rpm ) / 2f;
         gasInput = Input.GetAxis("Vertical");
         steeringInput = Input.GetAxis("Horizontal");

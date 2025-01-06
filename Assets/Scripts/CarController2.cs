@@ -44,6 +44,7 @@ public class CarController2 : MonoBehaviour
     void Update()
     {
         CheckInput();
+        ApplyTurning();
         CalculateForce();
         ApplyForce();
         ApplyTransform();
@@ -54,6 +55,36 @@ public class CarController2 : MonoBehaviour
         gasInput = Input.GetAxis("Vertical");
         steeringInput = Input.GetAxis("Horizontal");
         brakeInput = Input.GetKey(KeyCode.Space) ? 1f : 0f;
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            GearUp();
+        }
+        else if (Input.GetKeyDown(KeyCode.Z))
+        {
+            GearDown();
+        }
+    }
+
+    void GearUp()
+    {
+        if (_currentGear < 7)
+        {
+            _currentGear++;
+        }
+    }
+
+    void GearDown()
+    {
+        if (_currentGear > 0)
+        {
+            _currentGear--;
+        }
+    }
+
+    void ApplyTurning()
+    {
+        _colliders.FRWheel.steerAngle = _steerAngle * steeringInput;
+        _colliders.FLWheel.steerAngle = _steerAngle * steeringInput;
     }
 
     void CalculateForce()

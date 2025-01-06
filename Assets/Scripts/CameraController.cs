@@ -20,7 +20,7 @@ public class CameraController : MonoBehaviour
 
     void FixedUpdate()
     {
-        Vector3 _targetForward = (_targetRB.velocity + _target.transform.forward).normalized;
+        Vector3 _targetForward = (_targetRB.linearVelocity + _target.transform.forward).normalized;
         transform.position = Vector3.Slerp(transform.position,
             _target.position + _target.transform.TransformVector(_offset)
             + _targetForward * (-5f),
